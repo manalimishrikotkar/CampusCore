@@ -4,7 +4,7 @@ const qnaController = require('../controllers/qnaController');
 const { protect } = require('../auth/rbac'); // optional if JWT middleware is used
 
 // 📝 Create a new anonymous QnA post (optionally authenticated)
-router.post('/',  qnaController.postQuestion);
+router.post('/', protect, qnaController.postQuestion);
 
 // 📃 Get all QnA posts (public feed)
 router.get('/', qnaController.getQuestions);

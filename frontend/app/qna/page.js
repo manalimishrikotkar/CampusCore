@@ -281,6 +281,7 @@ export default function QnAPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           question: newQuestion.title,
           question_details: newQuestion.content,

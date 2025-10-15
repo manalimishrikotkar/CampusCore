@@ -39,7 +39,9 @@ exports.generateQuizFromPosts = async (subject, userId) => {
   if (!content) {
     throw new Error("No valid content found to generate quiz questions");
   }
+  
 
+  console.log(generateQuestions(content));
   // Generate MCQs from combined content
   const questions = await generateQuestions(content);
 

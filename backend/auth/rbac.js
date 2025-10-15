@@ -5,7 +5,8 @@ const User = require('../models/User.js');
 // Middleware to protect routes (check for valid JWT)
 const protect = async (req, res, next) => {
   try {
-    console.log("req",req.cookies.accessToken);
+    // console.log("req",req);
+    console.log("reqat",req.cookies.accessToken);
     const token = 
       req.cookies?.accessToken || 
       (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 

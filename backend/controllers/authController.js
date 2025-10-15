@@ -6,17 +6,18 @@ const {
   logoutUserService,
 } = require("../services/userService.js");
 
-
+// ========================
+// Register User
+// ========================
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
-    console.log(name)
+
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
-    console.log(req.body)
+
     const user = await registerUserService(req.body);
-    console.log(user)
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -31,8 +32,9 @@ const registerUser = async (req, res) => {
   }
 };
 
-
-
+// ========================
+// Login User
+// ========================
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -44,13 +46,16 @@ const loginUser = async (req, res) => {
     const user = await loginUserService(req.body);
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-    // Cookie options
+    // ✅ Cookie options for local testing (localhost:3000 <-> 5000)
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // HTTPS only in production
-      sameSite: "Strict",
+      secure: false, // only true in production (HTTPS)
+      sameSite: "lax", // must be lax for cross-port cookie sharing
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     };
+
+    console.log("✅ Setting cookies:", accessToken ? "YES" : "NO");
 
     res
       .status(200)
@@ -64,29 +69,31 @@ const loginUser = async (req, res) => {
           email: user.email,
           role: user.role,
         },
-        accessToken,
-        refreshToken,
       });
   } catch (err) {
+    console.error("❌ Login error:", err.message);
     res.status(401).json({ message: err.message || "Login failed" });
   }
 };
+
 // ========================
-// Logout Controller
+// Logout
 // ========================
 const logOutUser = async (req, res) => {
   try {
-    await logoutUserService(req.user._id);
+    await logoutUserService(req.user?._id);
 
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
+      sameSite: "lax",
+      path: "/",
     };
 
     res
-      .status(200)
       .clearCookie("accessToken", options)
       .clearCookie("refreshToken", options)
+      .status(200)
       .json({ message: "Logged out successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message || "Logout failed" });
@@ -99,7 +106,6 @@ const logOutUser = async (req, res) => {
 const refreshAccessToken = async (req, res) => {
   try {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
-
     if (!incomingRefreshToken) {
       return res.status(401).json({ message: "No refresh token provided" });
     }
@@ -108,13 +114,15 @@ const refreshAccessToken = async (req, res) => {
 
     const options = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
+      sameSite: "lax",
+      path: "/",
     };
 
     res
-      .status(200)
       .cookie("accessToken", accessToken, options)
       .cookie("refreshToken", refreshToken, options)
+      .status(200)
       .json({
         message: "Access token refreshed",
         accessToken,
@@ -149,9 +157,6 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-// ========================
-// Export All Controllers
-// ========================
 module.exports = {
   registerUser,
   loginUser,

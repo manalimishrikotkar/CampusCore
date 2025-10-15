@@ -4,6 +4,7 @@ const qnaService = require('../services/qnaService');
 // Create a new anonymous question
 exports.postQuestion = async (req, res) => {
   try {
+    console.log("req",req.user);
     const createdBy = req.user?._id || null; // Optional auth
     const {
       question,
