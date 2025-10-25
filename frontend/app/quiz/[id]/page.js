@@ -262,7 +262,7 @@ export default function QuizPage() {
                 <Link href="/quiz">
                   <Button variant="outline">More Quizzes</Button>
                 </Link>
-                <Link href="/dashboard">
+                <Link href="/user">
                   <Button variant="outline">Dashboard</Button>
                 </Link>
               </div>
@@ -373,7 +373,7 @@ export default function QuizPage() {
                 More Quizzes
               </Button>
             </Link>
-            <Link href="/dashboard">
+            <Link href="/user">
               <Button variant="outline">
                 <Home className="h-4 w-4 mr-2" />
                 Dashboard

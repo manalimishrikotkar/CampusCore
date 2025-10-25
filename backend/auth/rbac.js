@@ -6,19 +6,22 @@ const User = require('../models/User.js');
 const protect = async (req, res, next) => {
   try {
     // console.log("req",req);
-    console.log("reqat",req.cookies.accessToken);
-    const token = 
-      req.cookies?.accessToken || 
-      (req.headers.authorization && req.headers.authorization.startsWith('Bearer ') 
-        ? req.headers.authorization.split(' ')[1] 
+    console.log("🍪 req.cookies:", req.cookies);
+    console.log("🪪 req.headers.authorization:", req.headers.authorization);
+
+    console.log("reqat", req.cookies.accessToken);
+    const token =
+      req.cookies?.accessToken ||
+      (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')
+        ? req.headers.authorization.split(' ')[1]
         : null);
-    console.log("token",token);
+    console.log("token", token);
     if (!token) {
       return res.status(401).json({ message: 'Unauthorized. No token provided.' });
     }
     console.log("i am here");
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    console.log("decode",decoded)
+    console.log("decode", decoded)
     const user = await User.findById(decoded._id).select('-password -refreshToken');
     if (!user) {
       return res.status(401).json({ message: 'User not found. Invalid token.' });

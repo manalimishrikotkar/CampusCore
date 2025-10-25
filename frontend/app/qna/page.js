@@ -216,12 +216,19 @@ export default function QnAPage() {
     console.log("question_id", questionId);
     if (!replyText[questionId]) return;
 
-    const res = await fetch(`http://localhost:5000/api/qna/${questionId}/reply`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: replyText[questionId] }),
-    });
+    // const res = await fetch(`http://localhost:5000/api/qna/${questionId}/reply`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ text: replyText[questionId] }),
+    // });
 
+    const res = await fetch(`http://localhost:5000/api/qna/${questionId}/reply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // ✅ REQUIRED to send cookies
+    body: JSON.stringify({ text: replyText[questionId] }),
+  });
+    console.log("res",res);
     if (res.ok) {
       const updated = await res.json();
       setReplies(prev => ({
@@ -346,7 +353,7 @@ export default function QnAPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Ask Question
               </Button>
-              <Link href="/dashboard">
+              <Link href="/user">
                 <Button variant="outline">Dashboard</Button>
               </Link>
             </div>

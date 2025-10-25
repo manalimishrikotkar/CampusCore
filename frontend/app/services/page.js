@@ -187,7 +187,7 @@ export default function ServicesPage() {
                 Services
               </Link>
             </nav>
-            <Link href="/dashboard">
+            <Link href="/user">
               <Button variant="outline">Dashboard</Button>
             </Link>
           </div>

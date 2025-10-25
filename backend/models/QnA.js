@@ -6,6 +6,9 @@ const replySchema = new mongoose.Schema({
   upvotes: { type: Number, default: 0 },
   upvotedBy: [{ type: String }],
   createdAt: { type: Date, default: Date.now },
+  flagged: { type: Boolean, default: false },
+  sentimentScore: { type: Number, default: 0 },
+  analysis: { type: Object } // store Detoxify raw output
 }, { _id: true }); // <-- Ensures _id is auto-generated
 
 const qnaSchema = new mongoose.Schema({

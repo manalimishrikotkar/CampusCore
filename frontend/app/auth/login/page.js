@@ -18,7 +18,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -45,11 +45,30 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
+      console.log("data",data);
+
+      //       if (res.ok) {
+      //   // store user info and role in localStorage
+      //   localStorage.setItem("user", JSON.stringify(data.user))
+      //   alert("Login successful")
+
+      //   // redirect based on role
+      //   if (data.user.role === "admin") {
+      //     router.push("/admin/dashboard")
+      //   } else {
+      //     router.push("/user/dashboard")
+      //   }
+      // }
 
       if (res.ok) {
         console.log("✅ Logged in:", data.user);
+        localStorage.setItem("user", JSON.stringify(data.user))
         alert("Login successful");
-        router.push("/");
+        if (data.user.role === "admin") {
+          router.push("/admin")
+        } else {
+          router.push("/user")
+        }
       } else {
         alert(data.message || "Login failed");
       }

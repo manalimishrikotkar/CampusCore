@@ -1,4 +1,6 @@
 const qnaService = require('../services/qnaService');
+const { checkToxicity } = require('../utils/safetyClient');
+
 
 // 🔘 POST /api/qna
 // Create a new anonymous question
@@ -47,23 +49,76 @@ exports.getQuestions = async (req, res) => {
 
 // 🔘 POST /api/qna/:id/reply
 // Reply to a question, tracked internally for leaderboard
+// exports.replyToQuestion = async (req, res) => {
+//   try {
+//     const repliedBy = req.user?._id || null;
+//     const { text } = req.body;
+//     const qnaId = req.params.id;
+
+//     if (!text) {
+//       return res.status(400).json({ error: 'Reply cannot be empty' });
+//     }
+
+//     const updatedQna = await qnaService.replyToPost({ qnaId, text, repliedBy });
+
+//     // Optional: Notify original poster
+//     const originalUser = await qnaService.getOriginalPoster(qnaId);
+//     if (originalUser) {
+//       console.log(`📢 Notify: ${originalUser.name} - Your query was answered.`);
+//       // Plug in email/socket notification here
+//     }
+
+//     res.status(200).json(updatedQna);
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: 'Failed to post reply' });
+//   }
+// };
 exports.replyToQuestion = async (req, res) => {
   try {
     const repliedBy = req.user?._id || null;
     const { text } = req.body;
     const qnaId = req.params.id;
 
-    if (!text) {
-      return res.status(400).json({ error: 'Reply cannot be empty' });
-    }
+    console.log("🔹 Reply controller hit");
+    console.log("➡️ req.user:", req.user);
+    console.log("➡️ repliedBy:", repliedBy);
+    console.log("➡️ text:", text);
 
-    const updatedQna = await qnaService.replyToPost({ qnaId, text, repliedBy });
+    if (!text) return res.status(400).json({ error: 'Reply cannot be empty' });
 
-    // Optional: Notify original poster
+    // 1️⃣ Run toxicity analysis
+    const analysis = await checkToxicity(text);
+    const overallScore = analysis.score || 0;
+    const flagged = overallScore >= 0.75;
+
+    // 2️⃣ Build reply object
+    const replyObj = {
+      text,
+      repliedBy,
+      upvotes: 0,
+      upvotedBy: [],
+      createdAt: new Date(),
+      flagged,
+      sentimentScore: overallScore,
+      analysis, // full Detoxify report
+    };
+  console.log("Id1",qnaId);
+    // 3️⃣ Save reply in DB
+    const updatedQna = await qnaService.replyToPost({qnaId,replyObj});
+
+    // 4️⃣ Optional: Notify question author that a reply was posted
     const originalUser = await qnaService.getOriginalPoster(qnaId);
     if (originalUser) {
-      console.log(`📢 Notify: ${originalUser.name} - Your query was answered.`);
-      // Plug in email/socket notification here
+      console.log(`📩 Email → ${originalUser.email}: "Your query was answered"`);
+    }
+
+    // 5️⃣ Optional: If flagged, notify admin
+    if (flagged) {
+      console.log(
+        `🚨 Toxic reply detected for QnA ${qnaId} with score ${overallScore}`
+      );
+      // Later: email admin or create Notification doc
     }
 
     res.status(200).json(updatedQna);

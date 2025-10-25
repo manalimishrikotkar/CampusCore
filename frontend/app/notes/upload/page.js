@@ -24,16 +24,31 @@ export default function UploadNotesPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const router = useRouter()
 
-  const subjects = [
-    "Data Structures",
-    "Algorithms",
-    "Database Management",
-    "Operating Systems",
-    "Computer Networks",
-    "Software Engineering",
-    "Machine Learning",
-    "Web Development",
-  ]
+ const subjects = [
+  "Data Structures and Algorithms",
+  "Object-oriented Programming",
+  "Design Patterns",
+  "Database Management",
+  "Operating Systems",
+  "Computer Networks",
+  "Software Engineering",
+  "Machine Learning",
+  "Web Development",
+  "Programming Language",
+  "Artificial Intelligence",
+  "Generative AI",
+  "Cloud Computing",
+  "Blockchain Technology",
+  "Cybersecurity",
+  "Computer Architecture",
+  "Discrete Mathematics",
+  "Compiler Design",
+  "Internet of Things (IoT)",
+  "Data Science",
+  "Natural Language Processing",
+  "Mobile Application Development",
+  "DevOps and CI/CD",
+]
   const semesters = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"]
 
   const handleChange = (e) => {
@@ -100,33 +115,111 @@ export default function UploadNotesPage() {
   //     }, 2000)
   //   }, 3000)
   // }
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
+//   setIsUploading(true);
+
+//   try {
+//     // const token = localStorage.getItem("token"); // token from login
+//     // if (!token) {
+//     //   alert("You must be logged in to upload notes.");
+//     //   return;
+//     // }
+//     console.log("Hi");
+//     const response = await fetch("http://localhost:5000/api/posts", {
+//   method: "POST",
+//   headers: {
+//     "Content-Type": "application/json",
+//   },
+//   credentials: "include", // ✅ important to send cookie
+//   body: JSON.stringify({
+//     title: formData.title,
+//     description: formData.description,
+//     subject: formData.subject,
+//     semester: formData.semester,
+//     tags: formData.tags.split(",").map(tag => tag.trim()),
+//   }),
+// });
+
+//     console.log("Hi2");
+//     const data = await response.json();
+//     console.log("📤 Upload response:", data);
+
+//     if (response.ok) {
+//       setUploadSuccess(true);
+//       setTimeout(() => router.push("/"), 2000);
+//     } else {
+//       alert(data.message || "Upload failed");
+//     }
+//   } catch (error) {
+//     console.error("Upload error:", error);
+//     alert("Something went wrong.");
+//   } finally {
+//     setIsUploading(false);
+//   }
+// };
+
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
+
+//   if (!selectedFile) {
+//     alert("Please select a file to upload");
+//     return;
+//   }
+
+//   setIsUploading(true);
+
+//   try {
+//     const formDataToSend = new FormData();
+//     formDataToSend.append("title", formData.title);
+//     formDataToSend.append("description", formData.description);
+//     formDataToSend.append("subject", formData.subject);
+//     formDataToSend.append("semester", formData.semester);
+//     formDataToSend.append("tags", JSON.stringify(formData.tags.split(",").map(tag => tag.trim())));
+//     formDataToSend.append("file", selectedFile); // ✅ attach file!
+
+//     const response = await fetch("http://localhost:5000/api/posts", {
+//       method: "POST",
+//       body: formDataToSend,
+//       credentials: "include", // to send cookies (for auth)
+//     });
+
+//     const data = await response.json();
+//     console.log("📤 Upload response:", data);
+
+//     if (response.ok) {
+//       setUploadSuccess(true);
+//       setTimeout(() => router.push("/"), 2000);
+//     } else {
+//       alert(data.message || "Upload failed");
+//     }
+//   } catch (error) {
+//     console.error("Upload error:", error);
+//     alert("Something went wrong.");
+//   } finally {
+//     setIsUploading(false);
+//   }
+// };
+
 const handleSubmit = async (e) => {
   e.preventDefault();
   setIsUploading(true);
 
   try {
-    // const token = localStorage.getItem("token"); // token from login
-    // if (!token) {
-    //   alert("You must be logged in to upload notes.");
-    //   return;
-    // }
-    console.log("Hi");
-    const response = await fetch("http://localhost:5000/api/posts", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  credentials: "include", // ✅ important to send cookie
-  body: JSON.stringify({
-    title: formData.title,
-    description: formData.description,
-    subject: formData.subject,
-    semester: formData.semester,
-    tags: formData.tags.split(",").map(tag => tag.trim()),
-  }),
-});
+    const formDataToSend = new FormData();
+    formDataToSend.append("title", formData.title);
+    formDataToSend.append("description", formData.description);
+    formDataToSend.append("subject", formData.subject);
+    formDataToSend.append("semester", formData.semester);
+    formDataToSend.append("tags", JSON.stringify(formData.tags.split(",").map(tag => tag.trim())));
+    if (selectedFile) formDataToSend.append("file", selectedFile);
 
-    console.log("Hi2");
+    const response = await fetch("http://localhost:5000/api/posts", {
+      method: "POST",
+      credentials: "include",
+      body: formDataToSend, // ✅ No manual headers here!
+    });
+
     const data = await response.json();
     console.log("📤 Upload response:", data);
 
@@ -143,7 +236,6 @@ const handleSubmit = async (e) => {
     setIsUploading(false);
   }
 };
-
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes"
@@ -200,7 +292,7 @@ const handleSubmit = async (e) => {
                 Services
               </Link>
             </nav>
-            <Link href="/dashboard">
+            <Link href="/user">
               <Button variant="outline">Dashboard</Button>
             </Link>
           </div>

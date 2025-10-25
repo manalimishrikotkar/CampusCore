@@ -10,6 +10,10 @@ const quizRoutes = require('./routes/quizRoutes');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const { startNotificationWatcher } = require('./listeners/notificationWatcher');
+const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require("./routes/userRoutes");
+
+
 
 
 
@@ -41,6 +45,10 @@ app.use('/api/posts', postRoutes);
 app.use('/api/qna', qnaRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/quiz',quizRoutes);
+app.use('/api/admin', adminRoutes);
+app.use("/api/user", userRoutes);
+
+
 
 // ✅ Fallback: Serve frontend index.html for SPA routing
 // app.get('/', (req, res) => {

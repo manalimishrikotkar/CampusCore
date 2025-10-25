@@ -20,7 +20,9 @@ yarn-error.log*
 .env*
 .env
 backend/.env
-
+backend/credentials.json
+backend/token.json
+backend/service-account-key.json
 
 # vercel
 .vercel

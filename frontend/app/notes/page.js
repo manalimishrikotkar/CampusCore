@@ -34,7 +34,7 @@ export default function NotesPage() {
     const fetchNotes = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/posts", {
-          
+
           credentials: "include", // if route is protected
         });
 
@@ -62,18 +62,18 @@ export default function NotesPage() {
   // ]
   const handleLike = async (noteId) => {
     try {
-      console.log("noteid",noteId);
+      console.log("noteid", noteId);
       const res = await fetch(`http://localhost:5000/api/posts/${noteId}/like`, {
         method: "PUT",
         credentials: "include", // required if protected
       });
-      console.log("res",res);
+      console.log("res", res);
       if (!res.ok) {
         throw new Error("Like failed");
       }
 
       const updatedNote = await res.json(); // backend sends updated note (optional)
-      console.log("updatedNote",updatedNote.likes)
+      console.log("updatedNote", updatedNote.likes)
       // Update frontend state
       setNotes((prevNotes) =>
         prevNotes.map((note) =>
@@ -90,6 +90,39 @@ export default function NotesPage() {
       alert("You might need to login to like a note.");
     }
   };
+
+  const handleDownload = async (postId, fileUrl, fileName) => {
+    try {
+      // 1️⃣ Increment download count in backend
+      await fetch(`http://localhost:5000/api/posts/${postId}/download`, {
+        method: "PUT",
+        credentials: "include",
+      });
+
+      // 2️⃣ Force download via Cloudinary transformation
+      if (fileUrl) {
+        const downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.setAttribute("download", fileName || "note.pdf");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert("Download not available.");
+      }
+
+      // 3️⃣ (Optional) Update UI locally
+      setNotes(prev =>
+        prev.map(note =>
+          note._id === postId ? { ...note, downloads: (note.downloads || 0) + 1 } : note
+        )
+      );
+    } catch (error) {
+      console.error("Download error:", error);
+    }
+  };
+
 
   const filteredNotes = notes.filter((note) => {
     const matchesSearch =
@@ -136,7 +169,7 @@ export default function NotesPage() {
                   Upload Notes
                 </Button>
               </Link>
-              <Link href="/dashboard">
+              <Link href="/user">
                 <Button variant="outline">Dashboard</Button>
               </Link>
             </div>
@@ -236,10 +269,16 @@ export default function NotesPage() {
                   {/* Stats */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-1">
-                        <Download className="h-4 w-4" />
-                        <span>{note.downloads}</span>
-                      </div>
+                      <button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleDownload(note._id, note.file?.url, note.file?.originalName)}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                       
+                      </button>
+
 
                       <button
                         onClick={() => handleLike(note._id)}
@@ -251,13 +290,7 @@ export default function NotesPage() {
                         <span>{note.likes}</span>
                       </button>
 
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span>{note.rating}</span>
-                      </div>
                     </div>
-
-                    <span>{note.pages} pages</span>
                   </div>
 
 
@@ -268,16 +301,48 @@ export default function NotesPage() {
                   </div>
 
                   {/* Actions */}
+                  {/* Actions */}
                   <div className="flex gap-2">
-                    <Button size="sm" className="flex-1">
+                    <Button
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        if (note.file?.url) {
+                          // Open preview in new tab
+                          window.open(note.file.url, "_blank", "noopener,noreferrer");
+                        } else {
+                          alert("Preview not available. File missing.");
+                        }
+                      }}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 bg-transparent"
+                      onClick={() => {
+                        if (note.file?.url) {
+                          // Force download via Cloudinary transformation
+                          const downloadUrl = note.file.url.replace('/upload/', '/upload/fl_attachment/');
+                          const link = document.createElement("a");
+                          link.href = downloadUrl;
+                          link.setAttribute("download", note.file.originalName || "note.pdf");
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        } else {
+                          alert("Download not available. File missing.");
+                        }
+                      }}
+                    >
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
+
                   </div>
+
                 </div>
               </CardContent>
             </Card>

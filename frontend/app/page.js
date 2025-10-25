@@ -16,6 +16,20 @@ export default function HomePage() {
       .then((data) => setMessage(data));
   }, []);
 
+  useEffect(() => {
+    const user = localStorage.getItem("user")
+    if (user) {
+      setIsLoggedIn(true)
+    }
+  }, [])
+
+  const handleLogout = () => {
+    localStorage.removeItem("user")
+    setIsLoggedIn(false)
+    window.location.href = "/" // redirect to home
+  }
+
+
   const features = [
     {
       icon: <Upload className="h-8 w-8 text-blue-600" />,
@@ -95,9 +109,14 @@ export default function HomePage() {
                   </Link>
                 </>
               ) : (
-                <Link href="/dashboard">
-                  <Button>Dashboard</Button>
-                </Link>
+                <>
+                  <Link href="/user">
+                    <Button>Dashboard</Button>
+                  </Link>
+                  <Button onClick={handleLogout} variant="destructive">
+                    Logout
+                  </Button>
+                </>
               )}
             </div>
           </div>
