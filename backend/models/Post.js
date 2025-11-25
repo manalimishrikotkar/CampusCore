@@ -12,7 +12,9 @@ const postSchema = new mongoose.Schema({
   },
   tags: [String],
   file: {
-    url: String,          // Cloudinary URL
+    url: String,
+    downloadUrl: String,      // direct PDF link (uc?export=download)
+    driveFileId: String,
     public_id: String,    // For later deletion if needed
     contentType: String,
     originalName: String,

@@ -127,8 +127,8 @@ export default function QuizPage() {
               <Link href="/notes" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Notes
               </Link>
-              <Link href="/quiz" className="text-blue-600 font-medium">
-                Quiz
+              <Link href="/roadmap" className="text-blue-600 font-medium">
+                Roadmap
               </Link>
               <Link href="/qna" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Q&A

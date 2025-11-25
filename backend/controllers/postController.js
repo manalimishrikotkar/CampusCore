@@ -2,7 +2,6 @@ const axios = require('axios');
 const fs = require('fs');
 const FormData = require('form-data');
 const Post = require("../models/Post");
-const cloudinary = require("../config/cloudinary");
 // const Post = require('../models/Post');
 const {
   createPost,
@@ -12,153 +11,119 @@ const {
   deletePost, likePost
 } = require('../services/postService');
 
+const mongoose = require("mongoose");
 
-// const create = async (req, res) => {
-//   try {
-//     const { title, description, subject, semester, tags } = req.body;
-//     const userId = req.user._id;
-//     const userRole = req.user.role;
-//     const approvalStatus = userRole === "admin" ? "approved" : "pending";
+const ocrConnection = mongoose.createConnection(
+  process.env.MONGO_URI_OCR || "mongodb://localhost:27017/ocr_database",
+  {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  }
+);
 
-//     console.log("📩 Incoming body:", req.body);
-//     console.log("📂 Incoming file:", req.file ? req.file.originalname : "No file");
 
-//     // ✅ Prepare data
-//     const postData = {
-//       title,
-//       description,
-//       subject,
-//       semester,
-//       tags: Array.isArray(tags) ? tags : JSON.parse(tags || "[]"),
-//       createdBy: userId,
-//       approvalStatus,
-//     };
+const OCRSegmentSchema = new mongoose.Schema(
+  {
+    ocr_id: mongoose.Schema.Types.ObjectId,
 
-//     // ✅ Upload file to Cloudinary if provided
-//     if (req.file) {
-//       const uploadResult = await new Promise((resolve, reject) => {
-//         const stream = cloudinary.uploader.upload_stream(
-//           { resource_type: "auto", folder: "campuscore_uploads" },
-//           (error, result) => {
-//             if (error) reject(error);
-//             else resolve(result);
-//           }
-//         );
-//         stream.end(req.file.buffer);
-//       });
+    // ⚠️ IMPORTANT: FastAPI stores post_id as STRING
+    postId: {
+      type: String,
+      required: true,
+    },
 
-//       console.log("☁️ Uploaded to Cloudinary:", uploadResult.secure_url);
+    file_url: String,
 
-//       postData.file = {
-//         url: uploadResult.secure_url,
-//         public_id: uploadResult.public_id,
-//         contentType: req.file.mimetype,
-//         originalName: req.file.originalname,
-//       };
-//     }
+    segments: [
+      {
+        segmentNumber: Number,
+        pageStart: Number,
+        pageEnd: Number,
+        text: String,
+      },
+    ],
 
-//     // ✅ Save post to MongoDB
-//     const post = await Post.create(postData);
+    timestamp: Date,
+  },
+  { collection: "ocr_segments" }
+);
 
-//     res.status(201).json({
-//       success: true,
-//       message:
-//         approvalStatus === "pending"
-//           ? "Post submitted for admin approval"
-//           : "Post published successfully",
-//       data: post,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error creating post:", err);
-//     res.status(500).json({ message: "Failed to create post" });
-//   }
-// };
+const OCRSegments = ocrConnection.model("ocr_segments", OCRSegmentSchema);
 
-// const create = async (req, res) => {
-//   try {
-//     const { title, description, subject, semester, tags } = req.body;
-//     const userId = req.user._id;
-//     const userRole = req.user.role;
-//     const approvalStatus = userRole === "admin" ? "approved" : "pending";
 
-//     console.log("📩 Incoming body:", req.body);
-//     console.log("📂 Incoming file:", req.file ? req.file.originalname : "No file");
+const getOcrSegments = async (req, res) => {
+  try {
+    const { noteId } = req.params;
 
-//     const postData = {
-//       title,
-//       description,
-//       subject,
-//       semester,
-//       tags: Array.isArray(tags) ? tags : JSON.parse(tags || "[]"),
-//       createdBy: userId,
-//       approvalStatus,
-//     };
+    // We stored post_id as a plain string in Python, so no ObjectId casting here
+    const doc = await OCRSegments.findOne({ postId: noteId });
 
-//     // ✅ Upload to Cloudinary
-//     if (req.file) {
-//       const uploadResult = await new Promise((resolve, reject) => {
-//         const stream = cloudinary.uploader.upload_stream(
-//           { resource_type: "auto", folder: "campuscore_uploads" },
-//           (error, result) => {
-//             if (error) reject(error);
-//             else resolve(result);
-//           }
-//         );
-//         stream.end(req.file.buffer);
-//       });
+    if (!doc) {
+      console.log("⚠️ No OCR segments found for note:", noteId);
+      return res.json({ segments: [] });
+    }
 
-//       console.log("☁️ Uploaded to Cloudinary:", uploadResult.secure_url);
+    console.log("✅ Found OCR doc for note:", noteId, "segments count:", doc.segments?.length || 0);
 
-//       postData.file = {
-//         url: uploadResult.secure_url,
-//         public_id: uploadResult.public_id,
-//         contentType: req.file.mimetype,
-//         originalName: req.file.originalname,
-//       };
-//     }
+    // send segments exactly as stored
+    res.json({ segments: doc.segments || [] });
+  } catch (err) {
+    console.error("❌ OCR segments fetch error:", err);
+    res.status(500).json({ error: "Failed to load OCR segments" });
+  }
+};
 
-//     // ✅ Save post to MongoDB
-//     const post = await Post.create(postData);
 
-//     // 🧠 Trigger OCR Microservice (async but non-blocking)
-//     if (post.file?.url) {
-//       const ocrUrl = process.env.OCR_SERVICE_URL || "http://localhost:8000/api/ocr";
-//       console.log(`🚀 Sending file to OCR service: ${ocrUrl}`);
+const generateSegmentQuiz = async (req, res) => {
+  try {
+    const { segmentText } = req.body;
 
-//       const formData = new FormData();
-//       // Send file URL (not buffer) — your OCR service can download it
-//       formData.append("file_url", post.file.url);
-//       formData.append("tags", JSON.stringify(post.tags || []));
+    if (!segmentText)
+      return res.status(400).json({ error: "Missing segmentText" });
 
-//       try {
-//         const response = await axios.post(ocrUrl, formData, {
-//           headers: formData.getHeaders(),
-//           maxBodyLength: Infinity,
-//         });
+    const prompt = `
+Create 3 MCQs based ONLY on this text. JSON only, no explanation.
 
-//         console.log("🧩 OCR Service Response:", response.data);
+Text:
+${segmentText}
 
-//         // ✅ Optionally store OCR result
-//         post.ocrResult = response.data;
-//         await post.save();
-//       } catch (err) {
-//         console.error("⚠️ OCR service failed:", err.message);
-//       }
-//     }
+Format:
+[
+  {
+    "question": "...",
+    "options": ["A rule for writing JavaScript", "Letters", "..."],
+    "answer": "A rule for writing JavaScript"
+  }
+]
+    `;
 
-//     res.status(201).json({
-//       success: true,
-//       message:
-//         approvalStatus === "pending"
-//           ? "Post submitted for admin approval (OCR in progress)"
-//           : "Post published successfully",
-//       data: post,
-//     });
-//   } catch (err) {
-//     console.error("❌ Error creating post:", err);
-//     res.status(500).json({ message: "Failed to create post" });
-//   }
-// };
+    const geminiRes = await axios.post(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent?key=${process.env.GOOGLE_API_KEY_QUIZ}`,
+      { contents: [{ parts: [{ text: prompt }] }] },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    let output = geminiRes.data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    // 🧹 Clean markdown-style fences if present
+    output = output
+      .replace(/```json/gi, "")
+      .replace(/```/g, "")
+      .trim();
+
+    const quiz = JSON.parse(output);
+    
+
+    res.json({ questions: quiz });
+
+  } catch (err) {
+    console.error("❌ Segment quiz error:", err);
+    res.status(500).json({ error: "Failed to generate quiz" });
+  }
+};
+
+
+
 
 const create = async (req, res) => {
   try {
@@ -180,79 +145,25 @@ const create = async (req, res) => {
       approvalStatus,
     };
     console.log("req11", req.file);
-    // ✅ Upload file to Cloudinary
-    // if (req.file) {
-    //   const uploadResult = await new Promise((resolve, reject) => {
-    //     const stream = cloudinary.uploader.upload_stream(
-    //       { resource_type: "auto", folder: "campuscore_uploads" },
-    //       (error, result) => {
-    //         if (error) reject(error);
-    //         else resolve(result);
-    //       }
-    //     );
-    //     stream.end(req.file.buffer);
-    //   });
 
-    //   console.log("☁️ Uploaded to Cloudinary:", uploadResult.secure_url);
-
-    //   postData.file = {
-    //     url: uploadResult.secure_url,
-    //     public_id: uploadResult.public_id,
-    //     contentType: req.file.mimetype,
-    //     originalName: req.file.originalname,
-    //   };
-    // }
     // ✅ Upload file to Google Drive
     if (req.file) {
-  const { uploadFileToDrive } = require('../utils/googleDriveOAuth');
-  const uploadResult = await uploadFileToDrive(
-    req.file.buffer,
-    req.file.originalname,
-    req.file.mimetype,
-    process.env.DRIVE_FOLDER_ID // optional: your personal Drive folder ID
-  );
+      const { uploadFileToDrive } = require('../utils/googleDriveOAuth');
+      const uploadResult = await uploadFileToDrive(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype,
+        process.env.DRIVE_FOLDER_ID // optional: your personal Drive folder ID
+      );
 
-  postData.file = {
-    url: uploadResult.viewLink,
-    downloadUrl: uploadResult.downloadLink,
-    driveFileId: uploadResult.id,
-    contentType: req.file.mimetype,
-    originalName: req.file.originalname,
-  };
-}
-
-
-    // if (req.file) {
-    //   console.log("🚀 Uploading file to Cloudinary...");
-
-    //   const uploadResult = await new Promise((resolve, reject) => {
-    //     const timeout = setTimeout(() => reject(new Error("⏱ Cloudinary upload timeout")), 120000); // 2 mins
-
-    //     const stream = cloudinary.uploader.upload_stream(
-    //       { resource_type: "auto", folder: "campuscore_uploads" },
-    //       (error, result) => {
-    //         clearTimeout(timeout);
-    //         if (error) {
-    //           console.error("❌ Cloudinary upload error:", error);
-    //           reject(error);
-    //         } else {
-    //           console.log("✅ Cloudinary upload complete:", result.secure_url);
-    //           resolve(result);
-    //         }
-    //       }
-    //     );
-
-    //     stream.on("error", (err) => {
-    //       clearTimeout(timeout);
-    //       console.error("❌ Stream error:", err);
-    //       reject(err);
-    //     });
-
-    //     stream.end(req.file.buffer);
-    //   });
-    // }
-
-
+      postData.file = {
+        url: uploadResult.viewLink,
+        downloadUrl: uploadResult.downloadLink,
+        driveFileId: uploadResult.id,
+        contentType: req.file.mimetype,
+        originalName: req.file.originalname,
+      };
+    }
     // ✅ Save post in main DB
     const post = await Post.create(postData);
 
@@ -268,6 +179,7 @@ const create = async (req, res) => {
           {
             file_url: post.file.url,
             tags: post.tags || [],
+            post_id: post._id,
           },
           {
             headers: { "Content-Type": "application/json" },
@@ -303,7 +215,10 @@ const create = async (req, res) => {
 };
 
 const getAllPosts = async (req, res) => {
-  const posts = await Post.find({ approvalStatus: 'approved' }).populate('createdBy', 'name');
+  const posts = await Post.find({ approvalStatus: "approved" })
+    .populate("createdBy", "name github leetcode linkedin profileImageUrl")
+    .sort({ createdAt: -1 });
+
   res.status(200).json({ success: true, data: posts });
 };
 
@@ -397,7 +312,7 @@ const approveNote = async (req, res) => {
     // 🧠 Trigger quiz generation (non-blocking)
     try {
       console.log(`🚀 Generating quiz for approved note: ${note._id}`);
-      await generateQuizForPost(note._id, note.createdBy, note.subject);
+      await generateQuizForPost(note._id, note.createdBy, note.subject, note.tags);
       console.log("✅ Quiz generated successfully after approval.");
     } catch (quizErr) {
       console.error("⚠️ Quiz generation failed:", quizErr.message);
@@ -523,5 +438,5 @@ const getApprovedNotesByTopic = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch analytics data" });
   }
 };
-module.exports = { create, getAllPosts, getOne, update, remove, getPendingNotes, approveNote, disapproveNote, like, getApprovedNotesByTopic };
+module.exports = { create, getAllPosts, getOne, update, remove, getPendingNotes, approveNote, disapproveNote, like, getApprovedNotesByTopic, getOcrSegments, generateSegmentQuiz };
 // Post controller 

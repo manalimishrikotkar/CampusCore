@@ -3,6 +3,8 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { usePathname } from "next/navigation";
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +19,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
 
   const handleChange = (e) => {
@@ -45,7 +48,7 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      console.log("data",data);
+      console.log("data", data);
 
       //       if (res.ok) {
       //   // store user info and role in localStorage
@@ -64,10 +67,16 @@ export default function LoginPage() {
         console.log("✅ Logged in:", data.user);
         localStorage.setItem("user", JSON.stringify(data.user))
         alert("Login successful");
+        console.log("🧭 Current router info:", router);
+        
+
+console.log("➡ Current path:", router.pathname);
         if (data.user.role === "admin") {
-          router.push("/admin")
+          await new Promise(r => setTimeout(r, 100)); // small delay for cookie set
+          router.push("/admin");
         } else {
-          router.push("/user")
+          await new Promise(r => setTimeout(r, 100));
+          router.push("/user");
         }
       } else {
         alert(data.message || "Login failed");

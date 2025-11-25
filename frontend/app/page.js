@@ -8,13 +8,13 @@ import { BookOpen, MessageCircle, Trophy, MapPin, Upload, Brain, Users } from "l
 
 export default function HomePage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [message, setMessage] = useState('');
+  // const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    fetch('http://localhost:5000/')
-      .then((res) => res.text())
-      .then((data) => setMessage(data));
-  }, []);
+  // useEffect(() => {
+  //   fetch('http://localhost:5000/')
+  //     .then((res) => res.text())
+  //     .then((data) => setMessage(data));
+  // }, []);
 
   useEffect(() => {
     const user = localStorage.getItem("user")
@@ -85,8 +85,8 @@ export default function HomePage() {
               <Link href="/notes" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Notes
               </Link>
-              <Link href="/quiz" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Quiz
+              <Link href="/roadmap" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Roadmap
               </Link>
               <Link href="/qna" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Q&A
@@ -228,7 +228,7 @@ export default function HomePage() {
                   </Link>
                 </li>
                 <li>
-                  <Link href="/quiz" className="hover:text-white">
+                  <Link href="/notes" className="hover:text-white">
                     AI Quiz Generator
                   </Link>
                 </li>

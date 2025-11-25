@@ -14,6 +14,7 @@ const {
   disapproveNote,
   like
 } = require('../controllers/postController');
+const { getOcrSegments, generateSegmentQuiz } = require("../controllers/postController");
 
 const { protect, allowRoles } = require('../auth/rbac');
 
@@ -27,6 +28,9 @@ router.patch("/notes/:id/reject", protect, allowRoles("admin"), disapproveNote);
 // Then dynamic
 router.get('/', protect, getAllPosts);
 router.get('/:id', protect, getOne);
+router.get("/ocr/:noteId", protect, getOcrSegments);
+router.post("/generateQuiz", protect, generateSegmentQuiz);
+
 // router.post('/', protect, create);
 router.post("/", protect, upload.single("file"), create);
 

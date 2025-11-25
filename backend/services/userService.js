@@ -31,8 +31,8 @@ const generateAccessAndRefreshToken = async (userId) => {
 //   return user;
 // };
 
-const registerUserService = async ({ name, email, password, role }) => {
-  const user = await User.create({ name, email, password, role });
+const registerUserService = async ({ name, email, password, role, profileImageUrl , github ,leetcode ,linkedin  }) => {
+  const user = await User.create({ name, email, password, role,profileImageUrl , github ,leetcode ,linkedin });
 
   // // Generate tokens
   // const accessToken = user.generateAccessToken();

@@ -20,13 +20,24 @@ if (fs.existsSync(TOKEN_PATH)) {
 }
 
 // Generate Auth URL (run once to get token)
+// function getAuthUrl() {
+//   const authUrl = oAuth2Client.generateAuthUrl({
+//     access_type: 'offline',
+//     scope: SCOPES,
+//   });
+//   console.log('Authorize this app by visiting this url:', authUrl);
+// }
+
 function getAuthUrl() {
   const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
+    access_type: 'offline',     // 👈 gives refresh token
+    prompt: 'consent',          // 👈 forces Google to generate NEW token
+    scope:SCOPES ,
   });
-  console.log('Authorize this app by visiting this url:', authUrl);
+  console.log('Authorize this app by visiting:', authUrl);
+  return authUrl;
 }
+
 
 // Save token after OAuth callback
 async function saveToken(code) {

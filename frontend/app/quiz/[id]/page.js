@@ -13,7 +13,7 @@ import { BookOpen, Clock, CheckCircle, XCircle, RotateCcw, Home, Trophy, AlertCi
 export default function QuizPage() {
   const router = useRouter()
   const params = useParams()
-  const quizId = params.id
+  const postId = params.id
 
   // Quiz states
   const [quiz, setQuiz] = useState(null)
@@ -43,85 +43,64 @@ export default function QuizPage() {
     return () => clearInterval(interval)
   }, [quizStarted, quizCompleted, timeRemaining])
 
+
   // Fetch quiz data
   useEffect(() => {
     fetchQuizData()
-  }, [quizId])
+  }, [postId])
+
+  // const fetchQuizData = async () => {
+  //   try {
+  //     setLoading(true)
+  //     // Replace with your actual API endpoint
+  //     const response = await fetch(`/quiz/${postId}`)
+
+  //     if (response.success) {
+  //       setQuiz(response.data)
+  //       // Set timer (assuming 2 minutes per question or use quiz.timeLimit)
+  //       const totalTime = response.data.questions.length * 120 // 2 minutes per question
+  //       setTimeRemaining(totalTime)
+  //     } else {
+  //       throw new Error("Failed to fetch quiz")
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching quiz:", error)
+  //   //returned json comes here
+  //   setQuiz()
+  //     setTimeRemaining(600) // 10 minutes for demo
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const fetchQuizData = async () => {
     try {
-      setLoading(true)
-      // Replace with your actual API endpoint
-      const response = await fetch(`/quiz/${quizId}`)
+      setLoading(true);
+      const response = await fetch(`http://localhost:5000/api/quiz/${postId}`, {
+        credentials: "include",
+      });
 
-      if (response.success) {
-        setQuiz(response.data)
-        // Set timer (assuming 2 minutes per question or use quiz.timeLimit)
-        const totalTime = response.data.questions.length * 120 // 2 minutes per question
-        setTimeRemaining(totalTime)
+      const data = await response.json();
+      console.log("data",data);
+
+      if (response.ok && data.success) {
+        setQuiz(data.quiz);
+        const totalTime = data.quiz.questions.length * 120; // 2 min per Q
+        setTimeRemaining(totalTime);
       } else {
-        throw new Error("Failed to fetch quiz")
+        throw new Error("Failed to fetch quiz");
       }
     } catch (error) {
-      console.error("Error fetching quiz:", error)
-      // For demo purposes, use mock data
-      setQuiz({
-        subject: "Operating Systems",
-        questions: [
-          {
-            question: "What is the abbreviation 'OS' typically referring to?",
-            options: ["A. Operating System", "B. Original Sin", "C. Outer Space", "D. Optical Science"],
-            answer: "A",
-            _id: "6867b83b9777875c1b5a973b",
-          },
-          {
-            question: "What is the status of the term 'undefined' in the context of the text?",
-            options: [
-              "A. It is a programming concept",
-              "B. It is a mathematical term",
-              "C. It is undefined",
-              "D. It is a scientific phenomenon",
-            ],
-            answer: "C",
-            _id: "6867b83b9777875c1b5a973c",
-          },
-          {
-            question: "What can be inferred about the term 'OS' from the text?",
-            options: [
-              "A. It is a new concept",
-              "B. It is a common term",
-              "C. It is a technical term",
-              "D. It is a popular trend",
-            ],
-            answer: "C",
-            _id: "6867b83b9777875c1b5a973d",
-          },
-          {
-            question: "What is the context of the term 'undefined' in the text?",
-            options: [
-              "A. Scientific research",
-              "B. Programming language",
-              "C. Undefined context",
-              "D. General knowledge",
-            ],
-            answer: "B",
-            _id: "6867b83b9777875c1b5a973e",
-          },
-          {
-            question: "What is the nature of the term 'OS' in the text?",
-            options: ["A. It is a definition", "B. It is a concept", "C. It is a term", "D. It is a phrase"],
-            answer: "C",
-            _id: "6867b83b9777875c1b5a973f",
-          },
-        ],
-      })
-      setTimeRemaining(600) // 10 minutes for demo
+      console.error("Error fetching quiz:", error);
+      setQuiz(null);
+      setTimeRemaining(600); // fallback
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const startQuiz = () => {
+
+  const startQuiz = () => { //Logic adds here for restart quiz 
     setQuizStarted(true)
   }
 
@@ -148,28 +127,77 @@ export default function QuizPage() {
     setCurrentQuestionIndex(index)
   }
 
+  // const handleSubmitQuiz = async () => {
+  //   setSubmitting(true)
+
+  //   try {
+  //     // Calculate results
+  //     let correctAnswers = 0
+  //     const questionResults = quiz.questions.map((question) => {
+  //       const userAnswer = selectedAnswers[question._id]
+  //       const isCorrect = userAnswer === question.answer
+  //       if (isCorrect) correctAnswers++
+
+  //       return {
+  //         questionId: question._id,
+  //         question: question.question,
+  //         userAnswer,
+  //         correctAnswer: question.answer,
+  //         isCorrect,
+  //       }
+  //     })
+
+  //     const score = Math.round((correctAnswers / quiz.questions.length) * 100)
+  //     const timeTaken = quiz.questions.length * 120 - timeRemaining
+
+  //     const quizResults = {
+  //       score,
+  //       correctAnswers,
+  //       totalQuestions: quiz.questions.length,
+  //       timeTaken,
+  //       questionResults,
+  //       passed: score >= 60,
+  //     }
+
+  //     // Submit to backend
+  //     try {
+  //       await fetch(`/quiz/${postId}/submit`, {
+  //         answers: selectedAnswers,
+  //         timeTaken,
+  //         score,
+  //       })
+  //     } catch (error) {
+  //       console.error("Failed to submit quiz results:", error)
+  //     }
+
+  //     setResults(quizResults)
+  //     setQuizCompleted(true)
+  //   } catch (error) {
+  //     console.error("Error submitting quiz:", error)
+  //   } finally {
+  //     setSubmitting(false)
+  //   }
+  // }
   const handleSubmitQuiz = async () => {
-    setSubmitting(true)
+    setSubmitting(true);
 
     try {
-      // Calculate results
-      let correctAnswers = 0
+      let correctAnswers = 0;
       const questionResults = quiz.questions.map((question) => {
-        const userAnswer = selectedAnswers[question._id]
-        const isCorrect = userAnswer === question.answer
-        if (isCorrect) correctAnswers++
-
+        const userAnswer = selectedAnswers[question._id];
+        const isCorrect = userAnswer === question.answer;
+        if (isCorrect) correctAnswers++;
         return {
           questionId: question._id,
           question: question.question,
           userAnswer,
           correctAnswer: question.answer,
           isCorrect,
-        }
-      })
+        };
+      });
 
-      const score = Math.round((correctAnswers / quiz.questions.length) * 100)
-      const timeTaken = quiz.questions.length * 120 - timeRemaining
+      const score = Math.round((correctAnswers / quiz.questions.length) * 100);
+      const timeTaken = quiz.questions.length * 120 - timeRemaining;
 
       const quizResults = {
         score,
@@ -178,27 +206,53 @@ export default function QuizPage() {
         timeTaken,
         questionResults,
         passed: score >= 60,
-      }
+      };
 
-      // Submit to backend
-      try {
-        await fetch(`/quiz/${quizId}/submit`, {
+      console.log("Submitting quiz with postId:", postId);
+
+
+      // ✅ Submit to backend
+      const response = await fetch(`http://localhost:5000/api/quiz/${postId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           answers: selectedAnswers,
           timeTaken,
           score,
-        })
-      } catch (error) {
-        console.error("Failed to submit quiz results:", error)
-      }
+        }),
+      });
 
-      setResults(quizResults)
-      setQuizCompleted(true)
-    } catch (error) {
-      console.error("Error submitting quiz:", error)
-    } finally {
-      setSubmitting(false)
+      const resultData = await response.json();
+      console.log("📤 Quiz submission result:", resultData);
+
+      if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("quizAttempts");
+      let map = {};
+      if (stored) {
+        try {
+          map = JSON.parse(stored);
+        } catch (e) {
+          console.error("Failed to parse quizAttempts in quiz page", e);
+        }
+      }
+      // postId here is the same as noteId/postId
+      map[postId] = {
+        completed: true,
+        lastScore: score,        // extra info if you want to use later
+      };
+      localStorage.setItem("quizAttempts", JSON.stringify(map));
     }
-  }
+
+      setResults(quizResults);
+      setQuizCompleted(true);
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60)
@@ -237,7 +291,7 @@ export default function QuizPage() {
             <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiz Not Found</h2>
             <p className="text-gray-600 mb-6">The quiz you're looking for doesn't exist or has been removed.</p>
-            <Link href="/quiz">
+            <Link href="/notes">
               <Button>Back to Quizzes</Button>
             </Link>
           </CardContent>
@@ -259,7 +313,7 @@ export default function QuizPage() {
                 <span className="text-2xl font-bold text-gray-900">CampusCore</span>
               </Link>
               <div className="flex items-center space-x-4">
-                <Link href="/quiz">
+                <Link href="/notes">
                   <Button variant="outline">More Quizzes</Button>
                 </Link>
                 <Link href="/user">
@@ -363,11 +417,11 @@ export default function QuizPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={() => window.location.reload()}>
+            {/* <Button onClick={() => window.location.reload()}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Retake Quiz
-            </Button>
-            <Link href="/quiz">
+            </Button> */}
+            <Link href="/notes">
               <Button variant="outline">
                 <BookOpen className="h-4 w-4 mr-2" />
                 More Quizzes
@@ -397,7 +451,7 @@ export default function QuizPage() {
                 <BookOpen className="h-8 w-8 text-blue-600" />
                 <span className="text-2xl font-bold text-gray-900">CampusCore</span>
               </Link>
-              <Link href="/quiz">
+              <Link href="/notes">
                 <Button variant="outline">Back to Quizzes</Button>
               </Link>
             </div>
@@ -439,7 +493,7 @@ export default function QuizPage() {
                 </ul>
               </div>
 
-              {/* Start Button */}
+              {/* Start Button.. generated restart quiz triggers here */}
               <div className="text-center">
                 <Button size="lg" onClick={startQuiz} className="px-8">
                   Start Quiz
@@ -505,29 +559,26 @@ export default function QuizPage() {
               <CardContent>
                 <div className="space-y-3">
                   {currentQuestion.options.map((option, index) => {
-                    const optionLetter = option.charAt(0)
-                    const optionText = option.substring(3)
+                    const optionLetter = String.fromCharCode(65 + index) // 65 = 'A'
                     const isSelected = selectedAnswers[currentQuestion._id] === optionLetter
 
                     return (
                       <button
                         key={index}
                         onClick={() => handleAnswerSelect(currentQuestion._id, optionLetter)}
-                        className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                          isSelected
+                        className={`w-full p-4 text-left rounded-lg border-2 transition-all ${isSelected
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center space-x-3">
                           <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium ${
-                              isSelected ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
-                            }`}
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium ${isSelected ? "border-blue-500 bg-blue-500 text-white" : "border-gray-300"
+                              }`}
                           >
                             {optionLetter}
                           </div>
-                          <span className="text-gray-900">{optionText}</span>
+                          <span className="text-gray-900">{option}</span>
                         </div>
                       </button>
                     )
@@ -535,6 +586,7 @@ export default function QuizPage() {
                 </div>
               </CardContent>
             </Card>
+
 
             {/* Navigation */}
             <div className="flex items-center justify-between">
@@ -600,13 +652,12 @@ export default function QuizPage() {
                       <button
                         key={question._id}
                         onClick={() => goToQuestion(index)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                          isCurrent
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${isCurrent
                             ? "bg-blue-600 text-white"
                             : isAnswered
                               ? "bg-green-100 text-green-800 border border-green-300"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
+                          }`}
                       >
                         {index + 1}
                       </button>

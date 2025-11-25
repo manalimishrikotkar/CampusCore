@@ -17,6 +17,9 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     role: "",
+    github: "",
+    leetcode: "",
+    linkedin: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -24,7 +27,7 @@ export default function RegisterPage() {
   const router = useRouter()
 
   const semesters = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th"]
-  const roles = ["student","admin"]
+  const roles = ["student", "admin"]
 
   const handleChange = (e) => {
     setFormData({
@@ -57,48 +60,75 @@ export default function RegisterPage() {
   //   }, 2000)
   // }
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
 
-  if (formData.password !== formData.confirmPassword) {
-    alert("Passwords do not match!");
-    return;
-  }
+  const handleFileChange = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-  setIsLoading(true);
+  const reader = new FileReader();
 
-  try {
-    const response = await fetch("http://localhost:5000/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role
-      }),
-    });
+  reader.onloadend = () => {
+    const base64String = reader.result;
 
-    const data = await response.json();
-console.log("🧾 Response status:", response.status);
-console.log("🧾 Response data:", data);
+    // base64String is like: "data:image/png;base64,AAAA..."
+    // you can either store full string OR strip prefix.
+    const justBase64 = base64String.split(",")[1]; // after "base64,"
 
+    setFormData((prev) => ({
+      ...prev,
+      profileImageBase64: justBase64,
+    }));
+  };
 
-    if (response.ok) {
-      alert("Registration successful!");
-      // router.push("/dashboard"); // redirect on success
-    } else {
-      alert(data.message || "Registration failed");
-    }
-  } catch (error) {
-    console.error("Registration error:", error);
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
+  reader.readAsDataURL(file);
 };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          github: formData.github,
+          leetcode: formData.leetcode,
+          linkedin: formData.linkedin,
+          profileImageBase64: formData.profileImageBase64,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("🧾 Response status:", response.status);
+      console.log("🧾 Response data:", data);
+
+
+      if (response.ok) {
+        alert("Registration successful!");
+        // router.push("/dashboard"); // redirect on success
+      } else {
+        alert(data.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
 
   return (
@@ -178,6 +208,59 @@ console.log("🧾 Response data:", data);
                   </Select>
                 </div>
               </div>
+
+              {/* 👤 Profile Photo Upload */}
+              <div className="space-y-2">
+                <Label htmlFor="profileImage">Profile Photo (optional)</Label>
+                <Input
+                  id="profileImage"
+                  name="profileImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                />
+                <p className="text-xs text-gray-500">
+                  Max ~1MB recommended. JPG/PNG only.
+                </p>
+              </div>
+
+
+              <div className="space-y-2">
+                <Label htmlFor="github">GitHub Profile</Label>
+                <Input
+                  id="github"
+                  name="github"
+                  type="url"
+                  placeholder="https://github.com/username"
+                  value={formData.github}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="leetcode">LeetCode Profile</Label>
+                <Input
+                  id="leetcode"
+                  name="leetcode"
+                  type="url"
+                  placeholder="https://leetcode.com/username"
+                  value={formData.leetcode}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="linkedin">LinkedIn Profile</Label>
+                <Input
+                  id="linkedin"
+                  name="linkedin"
+                  type="url"
+                  placeholder="https://linkedin.com/in/username"
+                  value={formData.linkedin}
+                  onChange={handleChange}
+                />
+              </div>
+
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>

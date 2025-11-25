@@ -143,8 +143,8 @@ export default function DashboardPage() {
               <Link href="/notes" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Notes
               </Link>
-              <Link href="/quiz" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Quiz
+              <Link href="/roadmap" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Roadmap
               </Link>
               <Link href="/qna" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Q&A
@@ -219,7 +219,7 @@ export default function DashboardPage() {
                       <span>Upload Notes</span>
                     </Button>
                   </Link>
-                  <Link href="/quiz">
+                  <Link href="/notes">
                     <Button className="w-full h-20 flex flex-col space-y-2 bg-transparent" variant="outline">
                       <Brain className="h-6 w-6" />
                       <span>Take Quiz</span>

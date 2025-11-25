@@ -9,15 +9,61 @@ const {
 // ========================
 // Register User
 // ========================
+// const registerUser = async (req, res) => {
+//   try {
+//     const { name, email, password, role, github, leetcode, linkedin, profileImageBase64, } = req.body;
+
+//     if (!name || !email || !password) {
+//       return res.status(400).json({ message: "Name, email, and password are required" });
+//     }
+
+//     const user = await registerUserService(req.body);
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       user: {
+//         _id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//         github: user.github,
+//         leetcode : user.leetcode,
+//         linkedin : user.linkedin,
+//         profileImageBase64: user.profileImageBase64,
+//       },
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message || "Registration failed" });
+//   }
+// };
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      role, 
+      github, 
+      leetcode, 
+      linkedin,
+      profileImageBase64,   // 🔴 add this
+    } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
 
-    const user = await registerUserService(req.body);
+    // pass all fields to service
+    const user = await registerUserService({
+      name,
+      email,
+      password,
+      role,
+      github,
+      leetcode,
+      linkedin,
+      profileImageBase64,
+    });
+
     res.status(201).json({
       message: "User registered successfully",
       user: {
@@ -25,6 +71,10 @@ const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        github: user.github,
+        leetcode: user.leetcode,
+        linkedin: user.linkedin,
+        profileImageBase64: user.profileImageBase64,
       },
     });
   } catch (err) {

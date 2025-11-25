@@ -71,8 +71,10 @@ async function startNotificationWatcher() {
           // 📝 Case 1: New note inserted with approvalStatus = 'pending'
           if (change.operationType === 'insert' && fullDoc.approvalStatus === 'pending') {
             const admins = await User.find({ role: 'admin' });
+            console.log("admin",admins);
             for (const admin of admins) {
               if (admin.email) {
+                console.log("admin email",admin.email);
                 await sendEmail(
                   admin.email,
                   'New Note Pending Approval',

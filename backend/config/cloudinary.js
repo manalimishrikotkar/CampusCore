@@ -16,9 +16,6 @@ console.log("☁️ Cloudinary config loaded:", {
 // cloudinary.api.ping().then(console.log).catch(console.error);
 
 
-cloudinary.api
-  .ping({ timeout: 10000, agent: new https.Agent({ keepAlive: true }) })
-  .then(console.log)
-  .catch(console.error);
+
 
 module.exports = cloudinary;

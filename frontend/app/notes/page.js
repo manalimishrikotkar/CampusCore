@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation";
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Search, Download, Eye, Heart, Upload, Star } from "lucide-react"
+import { BookOpen, Search, Download, Eye, Heart, Upload, Star, Github, Linkedin, User as UserIcon, Code2 } from "lucide-react"
 
 export default function NotesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -16,7 +17,25 @@ export default function NotesPage() {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [likedNotes, setLikedNotes] = useState({});
+  const router = useRouter();
+  const [quizAttempts, setQuizAttempts] = useState({});
+  const [selectedCreator, setSelectedCreator] = useState(null);
+  const [showCreatorProfile, setShowCreatorProfile] = useState(false);
 
+  // existing state & hooks...
+
+  const openCreatorProfile = (creator) => {
+    if (!creator) return;
+    setSelectedCreator(creator);
+    setShowCreatorProfile(true);
+  };
+
+  const closeCreatorProfile = () => {
+    setShowCreatorProfile(false);
+    setSelectedCreator(null);
+  };
+
+  // ...rest of component (filters, handlers, etc.)
 
 
   const subjects = [
@@ -56,6 +75,47 @@ export default function NotesPage() {
 
     fetchNotes();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = localStorage.getItem("quizAttempts");
+    if (stored) {
+      try {
+        setQuizAttempts(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse quizAttempts from localStorage", e);
+      }
+    }
+  }, []);
+
+
+  const handleStartQuiz = (noteId) => {
+    // markAttempted(noteId);
+    router.push(`/quiz/${noteId}`);
+  };
+
+  const handleRestartQuiz = async (noteId) => {
+  try {
+    console.log("Restarting quiz for:", noteId);
+
+    const res = await fetch(`http://localhost:5000/api/quiz/requiz/${noteId}`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to restart quiz");
+    }
+
+    // After successful backend call → redirect
+    router.push(`/requiz/${noteId}`);
+  } catch (error) {
+    console.error("Restart quiz failed:", error);
+  }
+};
+
+
+
 
 
   // const notes = [
@@ -123,7 +183,9 @@ export default function NotesPage() {
     }
   };
 
-
+  const handlePreview = (noteId) => {
+    router.push(`/notes/${noteId}`);
+  };
   const filteredNotes = notes.filter((note) => {
     const matchesSearch =
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -149,8 +211,8 @@ export default function NotesPage() {
               <Link href="/notes" className="text-blue-600 font-medium">
                 Notes
               </Link>
-              <Link href="/quiz" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Quiz
+              <Link href="/roadmap" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Roadmap
               </Link>
               <Link href="/qna" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Q&A
@@ -241,7 +303,7 @@ export default function NotesPage() {
         {/* Notes Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredNotes.map((note) => (
-            <Card key={note.id} className="hover:shadow-lg transition-shadow duration-300">
+            <Card key={note._id} className="hover:shadow-lg transition-shadow duration-300">
               <CardHeader>
                 <div className="flex justify-between items-start mb-2">
                   <Badge variant="secondary">{note.subject}</Badge>
@@ -254,8 +316,8 @@ export default function NotesPage() {
                 <div className="space-y-4">
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1">
-                    {note.tags.slice(0, 3).map((tag, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
+                    {note.tags.slice(0, 3).map((tag) => (
+                      <Badge key={`${note._id}- ${tag}`} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
@@ -276,7 +338,7 @@ export default function NotesPage() {
                         onClick={() => handleDownload(note._id, note.file?.url, note.file?.originalName)}
                       >
                         <Download className="h-4 w-4 mr-2" />
-                       
+
                       </button>
 
 
@@ -294,11 +356,24 @@ export default function NotesPage() {
                   </div>
 
 
-                  {/* Author and Date */}
-                  <div className="text-sm text-gray-600">
-                    <p>By {note.author}</p>
-                    <p>{new Date(note.uploadDate).toLocaleDateString()}</p>
+                  {/* Author and Date + Quick Profile */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div>
+                      <p>By {note.createdBy?.name || "Unknown"}</p>
+                      <p>{new Date(note.createdAt).toLocaleDateString()}</p>
+                    </div>
+
+                    {note.createdBy && (
+                      <button
+                        type="button"
+                        onClick={() => openCreatorProfile(note.createdBy)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        View profile
+                      </button>
+                    )}
                   </div>
+
 
                   {/* Actions */}
                   {/* Actions */}
@@ -306,40 +381,30 @@ export default function NotesPage() {
                     <Button
                       size="sm"
                       className="flex-1"
-                      onClick={() => {
-                        if (note.file?.url) {
-                          // Open preview in new tab
-                          window.open(note.file.url, "_blank", "noopener,noreferrer");
-                        } else {
-                          alert("Preview not available. File missing.");
-                        }
-                      }}
+                      onClick={() => handlePreview(note._id)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
                       Preview
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 bg-transparent"
-                      onClick={() => {
-                        if (note.file?.url) {
-                          // Force download via Cloudinary transformation
-                          const downloadUrl = note.file.url.replace('/upload/', '/upload/fl_attachment/');
-                          const link = document.createElement("a");
-                          link.href = downloadUrl;
-                          link.setAttribute("download", note.file.originalName || "note.pdf");
-                          document.body.appendChild(link);
-                          link.click();
-                          document.body.removeChild(link);
-                        } else {
-                          alert("Download not available. File missing.");
-                        }
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download
-                    </Button>
+                    {!quizAttempts[note._id] ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleStartQuiz(note._id)}
+                      >
+                        Start Quiz
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleRestartQuiz(note._id)}
+                      >
+                        Restart Quiz
+                      </Button>
+                    )}
 
                   </div>
 
@@ -366,6 +431,113 @@ export default function NotesPage() {
           </div>
         )}
       </div>
-    </div>
+      {/* Creator Quick Profile Overlay */}
+      {
+        showCreatorProfile && selectedCreator && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
+              {/* Close button */}
+              <button
+                onClick={closeCreatorProfile}
+                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+
+              {/* Avatar */}
+              <div className="flex flex-col items-center text-center space-y-3">
+                {selectedCreator.profileImageBase64 ? (
+                  <img
+                    src={`data:image/png;base64,${selectedCreator.profileImageBase64}`}
+                    alt={selectedCreator.name}
+                    className="w-16 h-16 rounded-full object-cover border"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center">
+                    <span className="text-white text-xl font-semibold">
+                      {selectedCreator.name?.charAt(0).toUpperCase() || "U"}
+                    </span>
+                  </div>
+                )}
+
+
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {selectedCreator.name}
+                  </h2>
+                  {selectedCreator.email && (
+                    <p className="text-xs text-gray-500">{selectedCreator.email}</p>
+                  )}
+                </div>
+
+                {/* Social Links */}
+                <div className="w-full pt-4 border-t space-y-2">
+                  {selectedCreator.github && (
+                    <a
+                      href={selectedCreator.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Github className="h-4 w-4" />
+                        <span>GitHub</span>
+                      </div>
+                      <span className="text-xs text-gray-500 truncate max-w-[140px]">
+                        {selectedCreator.github}
+                      </span>
+                    </a>
+                  )}
+
+                  {selectedCreator.leetcode && (
+                    <a
+                      href={selectedCreator.leetcode}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Code2 className="h-4 w-4" />
+                        <span>LeetCode</span>
+                      </div>
+                      <span className="text-xs text-gray-500 truncate max-w-[140px]">
+                        {selectedCreator.leetcode}
+                      </span>
+                    </a>
+                  )}
+
+                  {selectedCreator.linkedin && (
+                    <a
+                      href={selectedCreator.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Linkedin className="h-4 w-4" />
+                        <span>LinkedIn</span>
+                      </div>
+                      <span className="text-xs text-gray-500 truncate max-w-[140px]">
+                        {selectedCreator.linkedin}
+                      </span>
+                    </a>
+                  )}
+
+                  {!selectedCreator.github &&
+                    !selectedCreator.leetcode &&
+                    !selectedCreator.linkedin && (
+                      <p className="text-xs text-gray-500 text-center pt-2">
+                        No social profiles added.
+                      </p>
+                    )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+      {/* <- your outermost div */}
+
+    </div >
   )
 }

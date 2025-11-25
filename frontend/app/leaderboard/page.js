@@ -231,8 +231,8 @@ export default function LeaderboardPage() {
               <Link href="/notes" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Notes
               </Link>
-              <Link href="/quiz" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Quiz
+              <Link href="/roadmap" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Roadmap
               </Link>
               <Link href="/qna" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Q&A

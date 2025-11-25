@@ -8,6 +8,22 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['student', 'admin'],default:"student"},
+   github: {
+    type: String,
+    default: "",
+  },
+  leetcode: {
+    type: String,
+    default: "",
+  },
+  linkedin: {
+    type: String,
+    default: "",
+  },
+   profileImageBase64: {
+    type: String,
+    default: "", // optional – empty if user never uploaded
+  },
   refreshToken: { type: String }
 });
 
